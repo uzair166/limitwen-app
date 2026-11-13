@@ -1,0 +1,30 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Toolchain
+        run: xcrun swift --version
+      - name: Offline tests and native package
+        run: ./scripts/check.sh
+      - name: npm launcher and package contents
+        run: |
+          npm test
+          python3 scripts/test-npm-package.py
+      - name: Check formatting
+        run: git diff --check

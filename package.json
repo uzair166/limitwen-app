@@ -1,0 +1,52 @@
+{
+  "name": "limitwen",
+  "version": "0.1.0",
+  "description": "Native macOS menu bar app for Claude Code and Codex subscription usage limits",
+  "license": "0BSD",
+  "type": "module",
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64",
+    "x64"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "limitwen": "bin/limitwen.mjs"
+  },
+  "scripts": {
+    "postinstall": "node scripts/npm-cli.mjs install",
+    "test": "node --test tests-js/*.test.mjs"
+  },
+  "files": [
+    "bin/",
+    "Sources/",
+    "Tests/",
+    "Resources/",
+    "Package.swift",
+    "scripts/build.sh",
+    "scripts/draw-icon.swift",
+    "scripts/npm-cli.mjs"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uzair166/limitwen-app.git"
+  },
+  "homepage": "https://github.com/uzair166/limitwen-app#readme",
+  "bugs": {
+    "url": "https://github.com/uzair166/limitwen-app/issues"
+  },
+  "keywords": [
+    "macos",
+    "menu-bar",
+    "claude-code",
+    "codex",
+    "chatgpt",
+    "usage-limits",
+    "subscription",
+    "swift"
+  ]
+}

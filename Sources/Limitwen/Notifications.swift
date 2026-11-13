@@ -21,7 +21,9 @@ struct SystemNotifications: NotificationDelivery {
     func authorize() async throws -> Bool {
         try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
     }
-    func schedule(_ notification: LimitNotification) async throws {
+    // Construct and submit framework objects outside UI isolation; older SDKs
+    // do not mark UNNotificationRequest as Sendable.
+    nonisolated func schedule(_ notification: LimitNotification) async throws {
         let content = UNMutableNotificationContent()
         content.title = notification.title
         content.body = notification.body

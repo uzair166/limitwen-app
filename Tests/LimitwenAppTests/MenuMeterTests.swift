@@ -26,4 +26,37 @@ struct MenuMeterTests {
         }
         #expect(mismatches == 0, "A weekly-only account must not gain an inner ring ")
     }
+    @Test(arguments: [false, true])
+    func fullAllowanceKeepsTheRingVisible(nested: Bool) throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        func coverage(remaining: Double) throws -> Double {
+            var windows = [QuotaWindow(id: "short", title: "5-hour", durationMinutes: 300,
+                                       usedPercent: 100 - remaining, resetsAt: nil)]
+            if nested {
+                windows.append(QuotaWindow(id: "weekly", title: "Weekly", durationMinutes: 10080,
+                                           usedPercent: 29, resetsAt: now.addingTimeInterval(3600)))
+            }
+            let image = MenuMeter.image(windows: windows, stale: false, now: now, threshold: 20)
+            let data = try #require(image.tiffRepresentation)
+            let bitmap = try #require(NSBitmapImageRep(data: data))
+            let radius = nested ? 5.2 : 9.0
+            var alpha = 0.0
+            for x in 0..<bitmap.pixelsWide {
+                for y in 0..<bitmap.pixelsHigh {
+                    let dx = (Double(x) + 0.5) * 24 / Double(bitmap.pixelsWide) - 12
+                    let dy = (Double(y) + 0.5) * 22 / Double(bitmap.pixelsHigh) - 11
+                    if abs(hypot(dx, dy) - radius) < 1.5 {
+                        alpha += Double(try #require(bitmap.colorAt(x: x, y: y)).alphaComponent)
+                    }
+                }
+            }
+            return alpha
+        }
+        // A complete allowance must remain at least as visible as a nearly full
+        // one, including a known percentage without a reported reset time.
+        let full = try coverage(remaining: 100)
+        let almostFull = try coverage(remaining: 99)
+        #expect(full >= almostFull * 0.95)
+    }
+
 }

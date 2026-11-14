@@ -1,40 +1,40 @@
 # Releases and installation channels
 
-## Source release
+## Verification
 
-1. Run `./scripts/check.sh`, `npm test` and `./scripts/test-ui.sh` in an unlocked macOS session.
-2. Inspect the app's menu bar, Settings, keyboard, pinning and provider failure states. Use synthetic screenshots; never publish account data.
-3. Keep `Resources/Info.plist` and `package.json` versions aligned.
-4. Tag the reviewed commit and publish source release notes. Do not claim binaries are notarized unless signing and notarization were actually verified.
-5. Update the Homebrew tap formula's source URL, version and SHA-256, then test a fresh installation.
+Run `./scripts/check.sh`, `npm test` and `./scripts/test-ui.sh` in an unlocked macOS session. Inspect the actual app and use synthetic screenshots. Keep Resources/Info.plist and package.json versions aligned. CI covers Apple silicon and Intel builds; native interaction and real-account behavior remain separate acceptance work.
 
-CI uses macOS on Apple silicon and Intel for offline build/test coverage. Native interaction and real-account behavior need their own acceptance run. A green CI result is not proof of every macOS version, display, accessibility setting or provider plan.
+## Signed application
+
+Build a universal executable and helper with `xcrun swift build -c release --arch arm64 --arch x86_64`. Package the normal app resources with those binaries. Sign the helper first, then the app, using a Developer ID Application identity, hardened runtime (`--options runtime`) and a trusted timestamp (`--timestamp`). Do not export private keys into the repository.
+
+For notarization, Xcode's signed-in account can be used with a macOS `.xcarchive` and `xcodebuild -exportArchive`: export method `developer-id`, destination `upload`, manual signing, and the selected team/certificate. This avoids requiring a separate app-specific password for an interactive developer-machine release. Store archive metadata, distribution logs and exported products only in ignored build directories. An archive must include the signed app under Products/Applications and matching application properties in its Info.plist.
+
+After Apple accepts the submission, `xcodebuild -exportNotarizedApp` exports the stapled application. Validate it with `xcrun stapler validate`, `codesign --verify --deep --strict`, and `spctl --assess --type execute --verbose=2`. A successful upload is not acceptance. Do not publish until all three validation steps pass.
+
+ZIP the stapled app with `ditto -c -k --sequesterRsrc --keepParent`, record its SHA-256, and upload the immutable release asset. Test a downloaded/extracted copy and the public installation channels. Never remove quarantine or weaken Gatekeeper as an installation workaround.
+
+See Apple's [notarization guidance](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution). Automated release signing needs separately configured secrets and permissions; the current setup uses local Keychain credentials, not an unattended signing pipeline.
 
 ## Homebrew
 
-The tap is [uzair166/homebrew-tap](https://github.com/uzair166/homebrew-tap). Its formula builds this repository's tagged source with the user's Swift 6 Apple toolchain and installs the app plus a `limitwen` launcher. Installation does not disable macOS security protections or extract provider credentials.
+[uzair166/homebrew-tap](https://github.com/uzair166/homebrew-tap) is a general-purpose tap. Its `limitwen` cask installs the notarized app into Applications. Update the cask version, immutable asset URL and SHA-256 for each release. Installation CI checks the app location, signature, ticket, Gatekeeper and uninstall behavior.
 
-A custom tap makes `brew install limitwen` available after `brew tap uzair166/tap`; no inclusion in Homebrew's central repositories is implied. Formula testing should use the exact published source archive/checksum.
+Use `brew install --cask uzair166/tap/limitwen`. The short name requires the tap to be added/trusted and must not conflict with another package. Inclusion in Homebrew's central collection is not implied. Earlier source-formula users must uninstall the formula before installing the cask; preferences are preserved.
 
 ## npm
 
-The root package contains the native sources, build script and a small Node launcher. `npm install -g limitwen` will build the app locally through its postinstall script once the package is published. The installer downloads no separate binary and requires macOS with Swift 6 developer tools. A user-writable npm prefix is recommended. If lifecycle scripts are disabled, `limitwen install` performs the build explicitly.
-
-Before publication:
+The package contains a small Node launcher, source code and the same notarized ZIP. `scripts/native-install.mjs` pins the archive digest and expected signing identity. Update these together with the version and release URL in `scripts/fetch-release.sh`.
 
 ```sh
+./scripts/fetch-release.sh
 npm test
-npm pack --dry-run --ignore-scripts
+python3 scripts/test-npm-package.py
 npm pack --ignore-scripts
-# In a disposable, user-writable prefix, install the resulting tarball and verify the app.
-npm login
+# Install the tarball in a disposable prefix and verify the installed app.
 npm publish --access public
 ```
 
-An npm account and its configured 2FA/approval may be required. Do not store tokens in this repository or replace a human login with copied credentials. After the initial package is published, configure [trusted publishing](https://docs.npmjs.com/trusted-publishers/) if desired and verify the exact repository/workflow identity. README registry instructions should only claim availability after a successful public registry read.
+The ZIP is an ignored build artifact included explicitly by npm's files allowlist. The installer verifies it before extraction, validates the signed app, and stages replacement. It reuses the same verified version in /Applications or installs into ~/Applications. It refuses to replace a different unmanaged installation or a running managed app. npm uninstall removes the launcher but leaves the standalone app.
 
-## Notarized binary releases
-
-Local ad-hoc signing is not Developer ID distribution. A future prebuilt release needs a Developer ID Application identity, hardened-runtime signing of the nested helper and app, notarization submission and stapling. Validate signatures and Gatekeeper assessment on the resulting artifact and test clean-machine installation.
-
-Use Apple's [notarization guidance](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution). Keep private keys, passwords and API keys outside source control. Never add a quarantine-removal or Gatekeeper-disable command as an installation workaround. An Apple Development identity does not replace a Developer ID Application certificate.
+The first publication requires npm account authentication and any configured approval. Configure [trusted publishing](https://docs.npmjs.com/trusted-publishers/) for subsequent releases if desired, verifying repository/workflow identity. Never store npm tokens in Git. Update the README to claim registry availability only after a successful registry read.

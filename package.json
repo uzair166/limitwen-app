@@ -29,7 +29,9 @@
     "Package.swift",
     "scripts/build.sh",
     "scripts/draw-icon.swift",
-    "scripts/npm-cli.mjs"
+    "scripts/npm-cli.mjs",
+    "scripts/native-install.mjs",
+    "vendor/Limitwen.zip"
   ],
   "repository": {
     "type": "git",

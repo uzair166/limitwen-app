@@ -25,6 +25,7 @@ jobs:
       - name: npm launcher and package contents
         run: |
           npm test
+          ./scripts/fetch-release.sh
           python3 scripts/test-npm-package.py
       - name: Check formatting
         run: git diff --check

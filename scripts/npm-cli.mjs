@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { installNative, findApp } from './native-install.mjs';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const metadata = JSON.parse(readFileSync(resolve(packageRoot, 'package.json'), 'utf8'));
@@ -11,6 +12,8 @@ export function runCLI(args, {
   root = packageRoot,
   run = spawnSync,
   exists = existsSync,
+  install = installNative,
+  locate = findApp,
   output = console.log,
   error = console.error,
 } = {}) {
@@ -21,23 +24,20 @@ export function runCLI(args, {
   }
   if (command === '--version') { output(metadata.version); return 0; }
   if (command === '--help' || command === '-h') {
-    output('Limitwen — Claude Code and Codex usage in your macOS menu bar.\n\nlimitwen          Open the app\nlimitwen --show   Open its usage popover\nlimitwen install  Build/rebuild the native app (requires Swift 6 Apple developer tools)\n\nNo credentials or prebuilt binaries are downloaded by this installer.');
+    output('Limitwen — Claude Code and Codex usage in your macOS menu bar.\n\nlimitwen          Open the app\nlimitwen --show   Open its usage popover\nlimitwen install  Install the signed, notarized app in your Applications folder\n\nThe app is bundled with this package. No Swift compiler or separate download is required.');
     return 0;
   }
   if (platform !== 'darwin') { error('Limitwen requires macOS 14 or later.'); return 1; }
-  const app = resolve(root, 'build', 'Limitwen.app');
   if (command === 'install') {
-    output('Building Limitwen locally. Swift 6 Apple developer tools are required.');
-    const result = run('/bin/zsh', [resolve(root, 'scripts', 'build.sh'), 'release'], { cwd: root, stdio: 'inherit' });
-    if (result.error || result.status !== 0) {
-      error('Limitwen could not be built. Check xcrun swift --version and your developer-tool selection, then run limitwen install. Use a user-writable npm prefix; do not disable macOS security protections.');
-      return 1;
-    }
-    output('Installed. Run limitwen to open the menu-bar app.');
-    return 0;
+    try {
+      const app = install({ root });
+      output(`Installed: ${app}\nOpen Limitwen from Finder, or run limitwen.`);
+      return 0;
+    } catch (failure) { error(failure.message); return 1; }
   }
-  if (!exists(resolve(app, 'Contents', 'MacOS', 'Limitwen'))) {
-    error('The native app is not built. Run limitwen install (needed when npm lifecycle scripts are disabled).');
+  const app = locate();
+  if (!app || !exists(resolve(app, 'Contents', 'MacOS', 'Limitwen'))) {
+    error('The app is not installed. Run limitwen install (needed when npm lifecycle scripts are disabled).');
     return 1;
   }
   const result = run('/usr/bin/open', [app, ...(command === '--show' ? ['--args', '--show'] : [])], { stdio: 'inherit' });

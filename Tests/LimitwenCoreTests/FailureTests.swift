@@ -65,5 +65,7 @@ func transportClassifiesErrorsWithoutExposingServerText(value: (String, Provider
 @Test func codexEarlyExitIsNotMisreportedAsADeadline() async throws {
     let (directory, executable) = try fixture("read -r line\nexit 1\n")
     defer { try? FileManager.default.removeItem(at: directory) }
-    await #expect(throws: ProviderFailure.unavailable) { try await CodexClient(executable: executable, timeout: 0.2).read() }
+    // This checks EOF classification, not launch speed. A 200 ms deadline can
+    // legitimately expire while the OS starts the fixture on a busy build host.
+    await #expect(throws: ProviderFailure.unavailable) { try await CodexClient(executable: executable, timeout: 5).read() }
 }

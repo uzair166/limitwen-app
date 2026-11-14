@@ -27,21 +27,41 @@ Limitwen is a small native macOS app that shows your remaining AI subscription a
 
 ## Install
 
-Limitwen currently builds locally from source. You need **macOS 14+ and Apple developer tools with Swift 6**. Check `xcrun swift --version` before installing. No separate subscription sign-in is added by Limitwen.
+You need **macOS 14 or newer**. The signed, notarized app runs on Apple silicon and Intel Macs. Swift and Xcode are **not required** for Homebrew, npm or the downloadable app.
 
 ### Homebrew
 
 ```sh
-brew tap uzair166/tap
-brew install limitwen
-limitwen
+brew install --cask uzair166/tap/limitwen
 ```
 
-Or install directly with `brew install uzair166/tap/limitwen`.
+Then open **Limitwen** from **Applications**. A terminal command is not needed to launch it.
 
-The formula compiles the app on your Mac and installs a `limitwen` launcher. This avoids shipping an unsigned prebuilt download; it is not a notarized binary release. It does not change Gatekeeper or quarantine settings.
+The custom tap is added automatically. To use the short name on Homebrew versions with explicit tap trust:
+
+```sh
+brew tap uzair166/tap
+brew trust --cask uzair166/tap/limitwen
+brew install --cask limitwen
+```
+
+If you installed the earlier source formula, run `brew uninstall --formula limitwen` before installing the cask. Preferences are preserved. Move an existing manually installed copy aside if Homebrew reports an Applications-folder conflict.
+
+### Download
+
+Download the universal app from [GitHub Releases](https://github.com/uzair166/limitwen-app/releases/latest), unzip it, and drag **Limitwen.app** into **Applications**. The release carries a Developer ID signature and a stapled Apple notarization ticket.
+
+### npm
+
+The npm package bundles the same signed app; it does not compile code or download another executable during installation. Registry availability is pending the first publication.
+
+Once published, `npm install -g limitwen` installs into your user's `~/Applications` folder, or reuses an identical verified installation in `/Applications`. Open the app in Finder, or run `limitwen`. If npm disables install scripts, run `limitwen install` once.
+
+The installer verifies the archive checksum, signing identity and Gatekeeper assessment before installing. It does not overwrite an older installation owned by another installer. Removing the npm package removes the launcher; the standalone app remains and can be moved to Trash separately.
 
 ### Build it yourself
+
+Contributors need Apple developer tools with **Swift 6**:
 
 ```sh
 git clone https://github.com/uzair166/limitwen-app.git
@@ -50,9 +70,7 @@ cd limitwen-app
 open build/Limitwen.app
 ```
 
-Quit a running checkout-built copy before rebuilding it. Scripts use your selected developer toolchain (`xcode-select`) or an explicit `DEVELOPER_DIR`.
-
-An npm source installer is included in the repository. Registry publication is not available yet; use Homebrew or a source build in the meantime. See [release instructions](docs/RELEASING.md) for its packaging and publishing workflow.
+Quit a running checkout-built copy before rebuilding it. Scripts respect your selected developer toolchain (`xcode-select`) or an explicit `DEVELOPER_DIR`. Local builds use ad-hoc signatures; the public release uses Developer ID signing and notarization.
 
 ## Connect your subscriptions
 

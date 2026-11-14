@@ -27,4 +27,7 @@ with tempfile.TemporaryDirectory(prefix='limitwen-npm-package-') as directory:
     targets = {entry['name'] for entry in json.loads(manifest)['targets']}
     assert {'Limitwen', 'LimitwenCoreTests', 'LimitwenAppTests'} <= targets
     assert (target / 'package/LICENSE').is_file()
-    print('PASS: packed npm source loads every SwiftPM target and includes its license')
+    assert (target / 'package/vendor/Limitwen.zip').is_file(), 'The signed app must be bundled in npm'
+    version = subprocess.check_output(['node', str(target / 'package/bin/limitwen.mjs'), '--version'], text=True).strip()
+    assert version == json.loads((target / 'package/package.json').read_text())['version']
+    print('PASS: npm payload includes the signed app, source targets, license and working launcher')

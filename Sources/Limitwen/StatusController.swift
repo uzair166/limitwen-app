@@ -18,7 +18,8 @@ final class StatusController: NSObject, NSPopoverDelegate {
         self.popover = popover
         super.init()
         popover.behavior = .transient
-        popover.animates = !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        // A menu-bar glance should appear immediately, without a zoom/fade.
+        popover.animates = false
         popover.delegate = self
         popover.contentViewController = NSHostingController(rootView: LimitsView(model: model)
             .onExitCommand { [weak popover] in popover?.performClose(nil) })
@@ -31,6 +32,8 @@ final class StatusController: NSObject, NSPopoverDelegate {
         }
         NotificationCenter.default.addObserver(self, selector: #selector(screenChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
         rebuild()
+        // Prepare SwiftUI's initial layout during setup, not on the first click.
+        measureContent()
     }
 
     func popoverWillShow(_ notification: Notification) {
@@ -140,17 +143,20 @@ final class StatusController: NSObject, NSPopoverDelegate {
         currentAnchor = sender
         updateAvailableSpace()
         model.selected = provider
-        popover.animates = !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        popover.animates = false
         // AppKit must know the final size before choosing which side of the anchor fits.
         // An unmeasured hosting controller initially reports a zero-sized popover.
-        if let view = popover.contentViewController?.view {
-            view.layoutSubtreeIfNeeded()
-            popover.contentSize = view.fittingSize
-        }
+        measureContent()
         NSApp.activate(ignoringOtherApps: true)
         let below: NSRectEdge = sender.isFlipped ? .maxY : .minY
         popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: below)
         popover.contentViewController?.view.window?.makeKey()
+    }
+    private func measureContent() {
+        if let view = popover.contentViewController?.view {
+            view.layoutSubtreeIfNeeded()
+            popover.contentSize = view.fittingSize
+        }
     }
     func showInitial(provider: ProviderID? = nil) {
         let key = provider.flatMap { items[$0.rawValue] == nil ? nil : $0.rawValue } ?? model.preferences.visiblePins.first?.rawValue ?? "app"

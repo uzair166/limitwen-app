@@ -244,6 +244,7 @@ func providerRemovalMigratesSettingsAndCancelsOnlyRemovedReminders(beginInPrevie
     try LocalStorage.write(old, to: h.directory.appendingPathComponent("claude-usage.json"))
     let model = h.model()
     model.change { $0.enabled = [.claude] }
+    model.disconnectClaude()
     await model.refresh()
     #expect(model.states[.claude] == nil)
 }
@@ -363,4 +364,36 @@ private actor ClaudeFeed {
     #expect(h.delivery.requests["reset:claude:weekly"] == nil)
     #expect(h.delivery.requests["reset:codex:weekly"] != nil)
     #expect(h.model().preferences.resetReminders["claude:weekly"] == nil)
+}
+
+@Test @MainActor func claudeReadsExistingUsageWithoutAConnectStep() async throws {
+    let h = try Harness(); defer { h.clean() }
+    h.defaults.removeObject(forKey: "preferences")
+    let expected = UsageSnapshot(provider: .claude, windows: [], observedAt: epoch, source: "Fixture")
+    let model = AppModel(defaults: h.defaults, storageDirectory: h.directory, notifications: h.delivery,
+        clock: { epoch }, readCodex: { snapshot() }, readClaude: { _ in expected })
+    await model.refresh()
+    #expect(model.states[.claude]?.snapshot == expected)
+}
+
+@Test @MainActor func anExplicitClaudeDisconnectMigratesToTheSubscriptionToggle() throws {
+    let h = try Harness(); defer { h.clean() }
+    h.defaults.removeObject(forKey: "preferences")
+    h.defaults.set(false, forKey: "claudeConnected")
+    let model = h.model()
+    #expect(!model.preferences.enabled.contains(.claude))
+    model.change { $0.enabled.append(.claude) }
+    #expect(model.claudeInstalled)
+    #expect(h.model().preferences.enabled.contains(.claude))
+    #expect(h.model().claudeInstalled)
+}
+
+@Test @MainActor func enablingClaudeClearsTheObsoleteDisconnectedNotice() throws {
+    let h = try Harness(); defer { h.clean() }
+    let model = h.model()
+    model.change { $0.enabled = [.claude] }
+    model.disconnectClaude()
+    #expect(model.notice != nil)
+    model.change { $0.enabled.append(.claude) }
+    #expect(model.notice == nil)
 }

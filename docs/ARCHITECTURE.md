@@ -13,6 +13,8 @@ Provider adapters return normalized snapshots or actionable failures. A missing 
 
 ## Claude Code
 
+Enabled by default, using the existing CLI sign-in without an extra Connect action. An explicit legacy disconnect migrates to the subscription being off. The 30-second refresh loop reads the local cache; active `/usage` refreshes remain rate-limited to five minutes with failure backoff. Updates are observed on the next cache check, not by intercepting messages.
+
 The adapter uses the installed CLI's native local `/usage` command, then reads the account-matched usage cache. Automatic refresh currently accepts the supported Claude 2.x range starting at 2.1.273. It uses safe mode and requires a receipt proving local execution with no model turns or model cost. Unsupported versions may provide existing cache data, but automatic refresh fails closed.
 
 The cache format is an observed implementation detail, not a stable third-party API. Cache account identity must match the current CLI account; identity is discarded after validation. Empty, malformed, future or mismatched cache records cannot become fresh readings. Team membership alone does not make local usage unavailable.

@@ -16,3 +16,5 @@ export LIMITWEN_NATIVE_UI_TESTS=1
 ./scripts/test.sh "$@" --filter repinnedStatusItemTracksItsOwnAppearanceWithoutPolling
 
 ./scripts/test.sh "$@" --filter unchangedStatusAppearanceDoesNotRewriteTheMenuItem
+
+./scripts/test.sh "$@" --filter menuBarPresentationDoesNotWaitForAnOpeningAnimation

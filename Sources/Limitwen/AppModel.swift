@@ -65,7 +65,7 @@ final class AppModel: ObservableObject {
         let initialTime = clock()
         now = initialTime; previewOrigin = initialTime
         claudeInstalled = defaults.object(forKey: "claudeConnected") as? Bool
-            ?? false
+            ?? true
         preferences = Preferences()
         ledger = defaults.data(forKey: "alertLedger").flatMap { try? JSONDecoder().decode(AlertLedger.self, from: $0) } ?? AlertLedger()
         restorePreferences()
@@ -76,6 +76,8 @@ final class AppModel: ObservableObject {
     private func restorePreferences() {
         let saved = defaults.data(forKey: "preferences").flatMap { try? JSONDecoder().decode(Preferences.self, from: $0) }
         preferences = saved ?? Preferences()
+        // Preserve an explicit opt-out from releases with a separate Connect control.
+        if !claudeInstalled { preferences.enabled.removeAll { $0 == .claude } }
         let previousReminders = preferences.resetReminders
         preferences.normalize()
         guard !preview, saved != nil else { return }
@@ -122,6 +124,11 @@ final class AppModel: ObservableObject {
         }
         if previous.alertsEnabled != preferences.alertsEnabled || previous.threshold != preferences.threshold { alertsRevision += 1 }
         if previous.enabled.contains(.claude) != preferences.enabled.contains(.claude) {
+            if !preview {
+                claudeInstalled = preferences.enabled.contains(.claude)
+                if claudeInstalled { notice = nil }
+                defaults.set(claudeInstalled, forKey: "claudeConnected")
+            }
             claudeGeneration += 1; claudeTask?.cancel(); claudeTask = nil; nextClaudeRead = .distantPast; lastClaudeAttempt = .distantPast
             states[.claude] = nil
         }
@@ -413,19 +420,14 @@ final class AppModel: ObservableObject {
             change { $0.resetReminders[key] = window.resetsAt }
         } catch { if isCurrent() { notice = "A reset time changed, but its reminder couldn’t be updated." } }
     }
-    func connectClaude() {
-        guard !preview else { notice = "Connection changes are unavailable in preview."; return }
-        claudeGeneration += 1; claudeInstalled = true
-        defaults.set(true, forKey: "claudeConnected")
-        nextClaudeRead = .distantPast; lastClaudeAttempt = .distantPast
-        notice = "Claude connected using your existing Claude Code sign-in."
-        Task { await refresh(force: true) }
-    }
     func disconnectClaude() {
         guard !preview else { return }
         claudeGeneration += 1; claudeTask?.cancel(); claudeTask = nil
         claudeInstalled = false; states[.claude] = nil
-        change { $0.resetReminders = $0.resetReminders.filter { !$0.key.hasPrefix("claude:") } }
+        change {
+            $0.enabled.removeAll { $0 == .claude }
+            $0.resetReminders = $0.resetReminders.filter { !$0.key.hasPrefix("claude:") }
+        }
         defaults.set(false, forKey: "claudeConnected")
         notice = "Claude disconnected."
         if storageDirectory == LocalStorage.directory {

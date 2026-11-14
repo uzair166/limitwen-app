@@ -53,9 +53,9 @@ Download the universal app from [GitHub Releases](https://github.com/uzair166/li
 
 ### npm
 
-The npm package bundles the same signed app; it does not compile code or download another executable during installation. Registry availability is pending the first publication.
+The [npm package](https://www.npmjs.com/package/limitwen) bundles the same signed app; it does not compile code or download another executable during installation.
 
-Once published, `npm install -g limitwen` installs into your user's `~/Applications` folder, or reuses an identical verified installation in `/Applications`. Open the app in Finder, or run `limitwen`. If npm disables install scripts, run `limitwen install` once.
+`npm install -g limitwen` installs into your user's `~/Applications` folder, or reuses an identical verified installation in `/Applications`. Open the app in Finder, or run `limitwen`. If npm disables install scripts, run `limitwen install` once.
 
 The installer verifies the archive checksum, signing identity and Gatekeeper assessment before installing. It does not overwrite an older installation owned by another installer. Removing the npm package removes the launcher; the standalone app remains and can be moved to Trash separately.
 

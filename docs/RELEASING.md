@@ -37,4 +37,13 @@ npm publish --access public
 
 The ZIP is an ignored build artifact included explicitly by npm's files allowlist. The installer verifies it before extraction, validates the signed app, and stages replacement. It reuses the same verified version in /Applications or installs into ~/Applications. It refuses to replace a different unmanaged installation or a running managed app. npm uninstall removes the launcher but leaves the standalone app.
 
-The first publication requires npm account authentication and any configured approval. Configure [trusted publishing](https://docs.npmjs.com/trusted-publishers/) for subsequent releases if desired, verifying repository/workflow identity. Never store npm tokens in Git. Update the README to claim registry availability only after a successful registry read.
+Publication requires npm account authentication and its 2FA approval, or an appropriately configured trusted publisher. Configure [trusted publishing](https://docs.npmjs.com/trusted-publishers/) for subsequent releases if desired, verifying repository/workflow identity. Never store npm tokens in Git. Update the README to claim registry availability only after a successful registry read.
+
+
+After npm accepts publication, wait until `npm view limitwen version` reports the expected version. A temporary staging placeholder is not a published release. Install from the registry into a disposable prefix and verify `limitwen --version` and `limitwen install`. Check the packaged README before publishing: a released tarball is immutable even if the GitHub README is later corrected.
+
+## Central Homebrew submission
+
+The third-party tap works independently of acceptance into `Homebrew/homebrew-cask`. Before opening a central submission, read the current [acceptance policy](https://docs.brew.sh/Package-Acceptance-Policy), [cask requirements](https://docs.brew.sh/Acceptable-Casks), [submission guide](https://docs.brew.sh/How-To-Open-a-Homebrew-Pull-Request) and repository CONTRIBUTING.md. Search existing and previously closed PRs. Verify livecheck, style, the new-cask audit, installation and uninstallation, and run `brew lgtm --online` from the contribution checkout. Do not mark failed or unperformed checks as passed.
+
+Disclose AI assistance when used. The submitter must personally review generated changes and PR text before requesting Homebrew review and must handle maintainer questions without AI assistance. A new release or a working third-party cask does not establish the age or public-interest requirements. Keep installation instructions pointing to the independent tap until a central cask is actually merged and available.

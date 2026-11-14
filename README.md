@@ -35,7 +35,9 @@ You need **macOS 14 or newer**. The signed, notarized app runs on Apple silicon 
 brew install --cask uzair166/tap/limitwen
 ```
 
-Then open **Limitwen** from **Applications**. A terminal command is not needed to launch it.
+Then open **Limitwen** from **Applications**. It runs in the menu bar, with no Dock icon. A terminal command is not needed to launch it.
+
+This command uses our independent tap. Limitwen is not currently included in Homebrew’s central collection.
 
 The custom tap is added automatically. To use the short name on Homebrew versions with explicit tap trust:
 
@@ -55,9 +57,27 @@ Download the universal app from [GitHub Releases](https://github.com/uzair166/li
 
 The [npm package](https://www.npmjs.com/package/limitwen) bundles the same signed app; it does not compile code or download another executable during installation.
 
-`npm install -g limitwen` installs into your user's `~/Applications` folder, or reuses an identical verified installation in `/Applications`. Open the app in Finder, or run `limitwen`. If npm disables install scripts, run `limitwen install` once.
+Requires Node.js 20 or newer and npm:
+
+```sh
+npm install -g limitwen
+```
+
+The installer uses your user's `~/Applications` folder, or reuses an identical verified installation in `/Applications`. Open **Limitwen.app** in Finder. For `~/Applications`, use Finder’s **Go → Go to Folder…** and enter `~/Applications`. The optional `limitwen` command also opens the app. If npm disables install scripts, run `limitwen install` once.
 
 The installer verifies the archive checksum, signing identity and Gatekeeper assessment before installing. It does not overwrite an older installation owned by another installer. Removing the npm package removes the launcher; the standalone app remains and can be moved to Trash separately.
+
+### Update or uninstall
+
+Use the same channel you installed with. Quit Limitwen from its menu-bar menu before updating.
+
+| Channel | Update | Uninstall |
+| --- | --- | --- |
+| Homebrew | `brew upgrade --cask uzair166/tap/limitwen` | `brew uninstall --cask uzair166/tap/limitwen` |
+| npm | `npm install -g limitwen@latest` | `npm uninstall -g limitwen`, then move the app from Applications to Trash |
+| Direct download | Download the latest release and replace the app in Applications | Move the app to Trash |
+
+If npm reused a Homebrew installation, update the app through Homebrew; npm will not overwrite a different version owned by another installer. Removing the app normally leaves preferences in place. There is no built-in automatic app updater.
 
 ### Build it yourself
 

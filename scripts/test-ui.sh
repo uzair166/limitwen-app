@@ -14,3 +14,5 @@ export LIMITWEN_NATIVE_UI_TESTS=1
 ./scripts/test.sh "$@" --filter escapeDismissesPopoverThroughResponderChain
 ./scripts/test.sh "$@" --filter customControlsDoNotStackNativeRectangularFocusRings
 ./scripts/test.sh "$@" --filter repinnedStatusItemTracksItsOwnAppearanceWithoutPolling
+
+./scripts/test.sh "$@" --filter unchangedStatusAppearanceDoesNotRewriteTheMenuItem

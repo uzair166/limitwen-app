@@ -193,6 +193,33 @@ struct PopoverPresentationTests {
         #expect(button.image !== darkImage)
     }
 
+    @Test func unchangedStatusAppearanceDoesNotRewriteTheMenuItem() async throws {
+        _ = NSApplication.shared; NSApp.setActivationPolicy(.accessory); NSApp.finishLaunching()
+        let model = AppModel(preview: true)
+        let popover = RecordingPopover()
+        let controller = StatusController(model: model, popover: popover)
+        defer { popover.close() }
+        controller.showInitial(provider: .claude)
+        try await Task.sleep(for: .milliseconds(200))
+        let button = try #require(popover.anchorView as? NSStatusBarButton)
+        button.appearance = NSAppearance(named: .aqua)
+        try await Task.sleep(for: .milliseconds(100))
+        var imageAssignments = 0
+        let observation = button.observe(\.image, options: [.new]) { _, _ in
+            MainActor.assumeIsolated { imageAssignments += 1 }
+        }
+        defer { observation.invalidate() }
+        // AppKit can invalidate effectiveAppearance without changing its value.
+        // Writing the status item again in response creates a layout/KVO loop.
+        func invalidateAppearance() {
+            button.willChangeValue(forKey: "effectiveAppearance")
+            button.didChangeValue(forKey: "effectiveAppearance")
+        }
+        invalidateAppearance()
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(imageAssignments == 0, "An unchanged appearance must not mutate the status item")
+    }
+
     private func expectVisibleContent(_ popover: RecordingPopover) throws {
         try #require(popover.isShown)
         let window = try #require(popover.contentViewController?.view.window)

@@ -76,7 +76,14 @@ final class StatusController: NSObject, NSPopoverDelegate {
                 itemAppearanceObservers[key] = button.observe(\.effectiveAppearance, options: [.new]) { [weak self, weak button] _, _ in
                     Task { @MainActor in
                         guard let self, let button, self.items[key]?.button === button else { return }
-                        self.rebuild()
+                        // AppKit may invalidate appearance during status-item layout
+                        // even when its value is unchanged. Rebuilding here feeds
+                        // that notification back into layout indefinitely.
+                        guard let provider = ProviderID(rawValue: key) else { return }
+                        button.effectiveAppearance.performAsCurrentDrawingAppearance {
+                            let image = self.makeImage(provider: provider, snapshot: self.model.states[provider]?.snapshot)
+                            if button.image !== image { button.image = image }
+                        }
                     }
                 }
             }

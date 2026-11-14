@@ -220,6 +220,28 @@ struct PopoverPresentationTests {
         #expect(imageAssignments == 0, "An unchanged appearance must not mutate the status item")
     }
 
+    @Test func menuBarPresentationDoesNotWaitForAnOpeningAnimation() async throws {
+        _ = NSApplication.shared; NSApp.setActivationPolicy(.accessory); NSApp.finishLaunching()
+        let model = AppModel(preview: true)
+        let popover = RecordingPopover()
+        let controller = StatusController(model: model, popover: popover)
+        defer { popover.close() }
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(popover.contentSize.width == Design.width, "Measure the SwiftUI content before the first click")
+        let start = ContinuousClock.now
+        var elapsed: Duration?
+        let observation = NotificationCenter.default.addObserver(forName: NSPopover.didShowNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { elapsed = start.duration(to: .now) }
+        }
+        defer { NotificationCenter.default.removeObserver(observation) }
+        controller.showInitial()
+        print("MENU_SHOW_CALL: \(start.duration(to: .now))")
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(popover.isShown)
+        #expect(!popover.animates, "A quick menu-bar glance should not wait for AppKit's opening animation")
+        print("MENU_OPEN_LATENCY: \(String(describing: elapsed))")
+    }
+
     private func expectVisibleContent(_ popover: RecordingPopover) throws {
         try #require(popover.isShown)
         let window = try #require(popover.contentViewController?.view.window)

@@ -106,7 +106,7 @@ Quit a running checkout-built copy before rebuilding it. Scripts respect your se
 
 | Entry | What it reads | What you need |
 | --- | --- | --- |
-| **Claude Code** | Reported short, weekly and model-specific limits from Claude's native usage command and account-matched cache | Installed, signed-in Claude Code. Automatic refresh currently requires a supported Claude 2.x version starting at 2.1.273. Enable **Connect** in Settings. |
+| **Claude Code** | Reported short, weekly and model-specific limits from Claude's native usage command and account-matched cache | Installed, signed-in Claude Code. Automatic refresh currently requires a supported Claude 2.x version starting at 2.1.273. Detected automatically when the subscription is enabled in Settings. |
 | **Codex & ChatGPT** | **Codex allowance** through the installed Codex CLI's app-server interface | Installed, signed-in Codex CLI. Use `codex login` if needed, then refresh. |
 
 The combined Codex & ChatGPT entry does **not** claim to measure separate ChatGPT message limits. Account plans differ: Limitwen only displays the windows the source actually reports. Claude Team accounts can expose local usage too; availability depends on the installed CLI and source data, not just the plan name.

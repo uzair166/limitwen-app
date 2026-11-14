@@ -4,7 +4,9 @@ import LimitwenCore
 enum Design {
     static let settingsSize = CGSize(width: 460, height: 470)
     static let width: CGFloat = 386
-    static let inset: CGFloat = 17
+    static let inset: CGFloat = 16
+    static let sectionRadius: CGFloat = 12
+    static let sectionGap: CGFloat = 8
     static let warningColor = NSColor(name: "LimitwenWarning") { appearance in
         appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
             ? NSColor(srgbRed: 0.94, green: 0.70, blue: 0.45, alpha: 1)
@@ -26,7 +28,7 @@ struct LimitsView: View {
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Your limits").font(.system(size: 16, weight: .semibold))
-                    Text(model.preview ? "Preview · example values" : "A little room to think.")
+                    Text(model.preview ? "Preview · example values" : "Remaining allowance")
                         .font(.system(size: 11)).foregroundStyle(model.preview ? Design.warning : Design.secondary)
                 }
                 Spacer()
@@ -40,7 +42,7 @@ struct LimitsView: View {
             Divider()
             ScrollViewReader { proxy in
             ScrollView {
-                VStack(spacing: 0) {
+                VStack(spacing: Design.sectionGap) {
                     if model.preferences.enabled.isEmpty {
                         VStack(spacing: 10) {
                             Image(systemName: "slider.horizontal.3").font(.system(size: 25)).foregroundStyle(Design.secondary)
@@ -52,7 +54,6 @@ struct LimitsView: View {
                     ForEach(model.preferences.enabled) { provider in
                         ProviderSection(model: model, provider: provider)
                             .id(provider)
-                        if provider != model.preferences.enabled.last { Divider() }
                     }
                     if let notice = model.notice {
                         HStack(alignment: .top, spacing: 7) {
@@ -63,6 +64,7 @@ struct LimitsView: View {
                     }
                 }
                 }
+                .padding(Design.sectionGap)
                 .background(GeometryReader { geometry in
                     Color.clear.preference(key: ContentHeight.self, value: geometry.size.height)
                 })
@@ -75,23 +77,17 @@ struct LimitsView: View {
             }
             }
             Divider()
-            VStack(alignment: .leading, spacing: 9) {
-                HStack {
-                    Text("Low-limit alerts").font(.system(size: 12, weight: .medium))
-                    Spacer()
-                    Toggle("Low-limit alerts", isOn: Binding(get: { model.preferences.alertsEnabled }, set: { enabled in Task { await model.setAlerts(enabled) } }))
-                        .labelsHidden().toggleStyle(.switch).controlSize(.mini)
-                        .accessibilityIdentifier("low-limit-alerts")
-                }
-                HStack {
-                    Text("When any limit reaches").font(.system(size: 11)).foregroundStyle(Design.secondary)
-                    Spacer()
-                    Picker("Alert threshold", selection: Binding(get: { model.preferences.threshold }, set: { value in model.change { $0.threshold = value } })) {
-                        ForEach([5, 10, 20, 30, 50], id: \.self) { Text("\($0)% left").tag($0) }
-                    }.labelsHidden().frame(width: 88).controlSize(.small).disabled(!model.preferences.alertsEnabled)
-                }
-
-            }.padding(.horizontal, Design.inset).padding(.vertical, 12).background(Color.primary.opacity(0.025))
+            HStack(spacing: 10) {
+                Text("Low-limit alerts").font(.system(size: 12, weight: .medium))
+                Spacer(minLength: 8)
+                Picker("Alert threshold", selection: Binding(get: { model.preferences.threshold }, set: { value in model.change { $0.threshold = value } })) {
+                    ForEach([5, 10, 20, 30, 50], id: \.self) { Text("\($0)% left").tag($0) }
+                }.labelsHidden().frame(width: 88).controlSize(.small).disabled(!model.preferences.alertsEnabled)
+                    .help("Notify when remaining allowance falls to this level")
+                Toggle("Low-limit alerts", isOn: Binding(get: { model.preferences.alertsEnabled }, set: { enabled in Task { await model.setAlerts(enabled) } }))
+                    .labelsHidden().toggleStyle(.switch).controlSize(.mini)
+                    .accessibilityIdentifier("low-limit-alerts")
+            }.padding(.horizontal, Design.inset).padding(.vertical, 12)
             Divider()
             HStack(spacing: 8) {
                 Button { model.showSettings() } label: { Label("Settings", systemImage: "slider.horizontal.3") }
@@ -113,12 +109,12 @@ struct LimitsView: View {
     private var contentHeight: CGFloat {
         let estimated = model.preferences.enabled.reduce(CGFloat(0)) { sum, provider in
             if let snapshot = model.states[provider]?.snapshot, !snapshot.windows.isEmpty {
-                return sum + 60 + CGFloat(snapshot.displayWindows.count) * 68 + (model.states[provider]?.error == nil ? 0 : 40)
+                return sum + 64 + CGFloat(snapshot.displayWindows.count) * 70 + (model.states[provider]?.error == nil ? 0 : 40)
             }
             return sum + 125
         }
-        let available = min(590, max(40, model.popoverAvailableHeight - 185))
-        let initialHeight = model.preferences.enabled.isEmpty ? 180 : estimated
+        let available = min(590, max(40, model.popoverAvailableHeight - 160))
+        let initialHeight = model.preferences.enabled.isEmpty ? 180 : estimated + CGFloat(model.preferences.enabled.count + 1) * Design.sectionGap
         return min(max(130, measuredContentHeight > 0 ? measuredContentHeight : initialHeight), available)
     }
 }
@@ -175,12 +171,8 @@ struct ProviderSection: View {
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(emptyDescription).font(.system(size: 12)).foregroundStyle(Design.secondary).fixedSize(horizontal: false, vertical: true)
-                    if provider == .claude && !model.claudeInstalled {
-                        Button("Connect Claude Code…") { model.showSettings() }.font(.system(size: 12))
-                    } else {
-                        Button(provider == .codex ? "Connection details…" : "Setup details…") { model.showSettings() }.font(.system(size: 12))
-                        if provider == .claude { Button(provider.dashboardLabel) { openDashboard(provider) }.font(.system(size: 12)) }
-                    }
+                    Button("Connection details…") { model.showSettings() }.font(.system(size: 12))
+                    if provider == .claude { Button(provider.dashboardLabel) { openDashboard(provider) }.font(.system(size: 12)) }
                 }
             }
             if let error = state.error, snapshot != nil {
@@ -188,13 +180,18 @@ struct ProviderSection: View {
             }
         }
         .padding(.horizontal, Design.inset).padding(.vertical, 13)
-        .background(model.selected == provider ? Color.primary.opacity(0.02) : Color.clear)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: Design.sectionRadius))
+        .overlay {
+            RoundedRectangle(cornerRadius: Design.sectionRadius)
+                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 0.5)
+                .allowsHitTesting(false).accessibilityHidden(true)
+        }
         .accessibilityElement(children: .contain).accessibilityLabel(provider.name)
     }
     private var emptyDescription: String {
         if let error = state.error { return error }
         if state.refreshing { return "Reading your current allowance…" }
-        if provider == .claude { return model.claudeInstalled ? model.claudeAccount.missingUsageMessage : "Connect Claude Code to read your saved allowance and refresh it using your existing sign-in." }
+        if provider == .claude { return model.claudeAccount.missingUsageMessage }
         if provider == .codex && snapshot != nil { return "Your signed-in account hasn’t reported any subscription limits yet." }
         return "Sign in to Codex CLI to read your Codex allowance."
     }
@@ -229,7 +226,7 @@ struct QuotaRow: View {
                 if let remaining = window.remainingPercent {
                     HStack(alignment: .firstTextBaseline, spacing: 3) {
                         Text("\(Int(remaining.rounded()))%")
-                            .font(.system(size: 14, weight: .medium)).monospacedDigit().foregroundStyle(low ? Design.warning : .primary)
+                            .font(.system(size: 16, weight: .semibold)).monospacedDigit().foregroundStyle(low ? Design.warning : .primary)
                         Text(stale || elapsed ? "last known" : "left").font(.system(size: 11)).foregroundStyle(Design.secondary)
                     }
                 } else { Text("Not reported").font(.system(size: 11)).foregroundStyle(Design.secondary) }
@@ -334,8 +331,11 @@ struct SettingsView: View {
         let enabled = model.preferences.enabled.contains(provider)
         return VStack(alignment: .leading, spacing: 9) {
             Toggle(isOn: Binding(get: { model.preferences.enabled.contains(provider) }, set: { value in
-                model.change {
-                    if value { $0.enabled.append(provider) } else { $0.enabled.removeAll { $0 == provider } }
+                if provider == .claude && !value { model.disconnectClaude() }
+                else {
+                    model.change {
+                        if value { $0.enabled.append(provider) } else { $0.enabled.removeAll { $0 == provider } }
+                    }
                 }
                 Task { await model.refresh(force: true) }
             })) {
@@ -343,7 +343,7 @@ struct SettingsView: View {
             }.toggleStyle(.switch).controlSize(.small)
                 .accessibilityLabel("Enable \(provider.name)")
 
-            Text(provider == .claude ? "Uses your Claude Code sign-in, including Team accounts." : "Uses your Codex sign-in. Shows Codex allowance.")
+            Text(provider == .claude ? "Automatically reads local usage with your Claude Code sign-in, including Team accounts. Turn off to stop reads." : "Uses your Codex sign-in. Shows Codex allowance.")
                 .font(.system(size: 11)).foregroundStyle(Design.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack {
@@ -353,13 +353,7 @@ struct SettingsView: View {
                     }
                 })).disabled(!enabled).accessibilityLabel("Pin \(provider.name) to menu bar")
                 Spacer()
-                if provider == .claude {
-                    Button(model.claudeInstalled ? "Disconnect" : "Connect") {
-                        if model.claudeInstalled { model.disconnectClaude() } else { model.connectClaude() }
-                    }.disabled(model.preview || !enabled)
-                        .accessibilityLabel(model.claudeInstalled ? "Disconnect Claude Code" : "Connect Claude Code")
-                        .help("Reads saved usage and refreshes through Claude Code 2.1.273 or later. Disconnect stops reads.")
-                }
+
             }.controlSize(.small)
             if enabled, let error = model.states[provider]?.error {
                 Text(error).font(.system(size: 11)).foregroundStyle(Design.secondary)

@@ -5,7 +5,7 @@ mkdir -p vendor
 staged="$(mktemp "$PWD/vendor/.release-XXXXXX")"
 trap 'rm -f "$staged"' EXIT
 curl --fail --location --proto '=https' --proto-redir '=https' \
-  'https://github.com/uzair166/limitwen-app/releases/download/v0.1.1/Limitwen-0.1.1-universal-notarized.zip' \
+  'https://github.com/uzair166/limitwen-app/releases/download/v0.1.2/Limitwen-0.1.2-universal-notarized.zip' \
   --output "$staged"
 node --input-type=module - "$staged" <<'JS'
 import { readFileSync } from 'node:fs';

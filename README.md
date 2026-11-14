@@ -1,8 +1,8 @@
-# Limitwen
+# Limitwen: Claude Code and Codex limits for macOS
 
-**Claude Code and Codex usage limits, right in your Mac menu bar.**
+**Just your AI limits, in your menu bar.**
 
-Limitwen is a small native macOS app that shows your remaining AI subscription allowance, reset times and low-limit alerts. Glance at the rings, open the popover when you need detail, and get back to work.
+Limitwen is a free, open-source, lightweight macOS menu bar app for tracking **Claude Code and OpenAI Codex usage limits**. See how much allowance you have left and when it resets. Simple rings, a click for details, and optional alerts. No fluff.
 
 [![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111111)](https://github.com/uzair166/limitwen-app)
 [![Swift 6](https://img.shields.io/badge/Swift-6-F05138)](https://www.swift.org/)
@@ -10,20 +10,21 @@ Limitwen is a small native macOS app that shows your remaining AI subscription a
 [![CI](https://github.com/uzair166/limitwen-app/actions/workflows/ci.yml/badge.svg)](https://github.com/uzair166/limitwen-app/actions/workflows/ci.yml)
 
 <p>
-  <img src="https://raw.githubusercontent.com/uzair166/limitwen-app/main/docs/images/popover-light.png" width="380" alt="Limitwen macOS menu bar popover showing separate Claude Code and Codex allowance, five-hour and weekly reset times, and notification controls" />
-  <img src="https://raw.githubusercontent.com/uzair166/limitwen-app/main/docs/images/settings-light.png" width="380" alt="Limitwen single-panel Settings with provider initials, Claude Code and Codex connections, and individual menu-bar pinning" />
+  <img src="https://raw.githubusercontent.com/uzair166/limitwen-app/main/docs/images/menu-bar-context.png" width="906" alt="Limitwen's single and nested usage rings in a real macOS menu bar, alongside Slack, Docker and other menu-bar icons" />
 </p>
 
-*Screenshots use labeled example data, not a real account.*
+*Limitwen in the menu bar. The two rings on the left show your subscription limits at a glance.*
 
-## What you get
+[Download for Mac](https://github.com/uzair166/limitwen-app/releases/latest) · [Install with Homebrew](#homebrew) · [Install with npm](#npm) · [Report a bug](https://github.com/uzair166/limitwen-app/issues)
+
+## Simple by design
 
 - **Separate Claude Code and Codex rings.** Pin either, both or neither; one app icon remains when nothing is pinned.
 - **Short and weekly windows when reported.** Inner ring = shorter window, outer ring = longer window. Weekly-only accounts get one ring.
 - **Clear reset times.** Relative countdowns and exact local times, with optional per-window reset reminders.
 - **Low-limit alerts.** Choose a remaining-allowance threshold; repeated polls do not send duplicate alerts for the same reset cycle.
 - **Honest stale and missing data.** Unknown is not zero. A reset deadline does not invent a refill. Transient failures retain the last-known observation where account ownership remains valid.
-- **A native Mac experience.** SwiftUI and AppKit, light/dark appearance, keyboard controls, one Settings panel and no Dock icon.
+- **Lightweight and native.** Built with SwiftUI and AppKit, with no third-party Swift dependencies. One small Settings panel, light/dark appearance, and no Dock icon.
 
 ## Install
 
@@ -91,6 +92,15 @@ open build/Limitwen.app
 ```
 
 Quit a running checkout-built copy before rebuilding it. Scripts respect your selected developer toolchain (`xcode-select`) or an explicit `DEVELOPER_DIR`. Local builds use ad-hoc signatures; the public release uses Developer ID signing and notarization.
+
+## Screenshots
+
+<p>
+  <img src="https://raw.githubusercontent.com/uzair166/limitwen-app/main/docs/images/popover-light.png" width="380" alt="Limitwen macOS menu bar popover showing separate Claude Code and Codex allowance, five-hour and weekly reset times, and notification controls" />
+  <img src="https://raw.githubusercontent.com/uzair166/limitwen-app/main/docs/images/settings-light.png" width="380" alt="Limitwen single-panel Settings with provider initials, Claude Code and Codex connections, and individual menu-bar pinning" />
+</p>
+
+*These popover and Settings previews use labeled example data.*
 
 ## Connect your subscriptions
 
